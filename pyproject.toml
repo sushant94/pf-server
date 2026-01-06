@@ -1,0 +1,32 @@
+[project]
+name = "pf-server"
+version = "0.1.0"
+description = "PF Server with OAuth authentication and per-user containers"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "docker>=7.1.0",
+    "fastapi>=0.128.0",
+    "httpx>=0.28.1",
+    "pydantic-settings>=2.12.0",
+    "python-jose[cryptography]>=3.5.0",
+    "uvicorn[standard]>=0.40.0",
+    "websockets>=15.0.1",
+]
+
+[project.scripts]
+pf-cli = "cli.pf_cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
