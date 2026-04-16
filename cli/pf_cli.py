@@ -3,6 +3,7 @@
 
 import asyncio
 import webbrowser
+import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from threading import Thread
@@ -11,7 +12,7 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import websockets
 
-SERVER_URL = "http://localhost:8000"
+SERVER_URL = os.getenv("PF_SERVER_URL", "http://localhost:8000")
 TOKEN_PATH = Path.home() / ".config" / "pf" / "token"
 CALLBACK_PORT = 9876
 
@@ -60,12 +61,14 @@ def wait_for_callback() -> str:
 
 def login():
     """Perform OAuth login flow."""
+    print(f"Using server: {SERVER_URL}")
+
     # 1. Get OAuth URL from server
     resp = httpx.get(f"{SERVER_URL}/auth/login")
     resp.raise_for_status()
     oauth_url = resp.json()["url"]
 
-    print(f"Opening browser for login...")
+    print("Opening browser for login...")
 
     # 2. Open browser
     webbrowser.open(oauth_url)
@@ -100,9 +103,11 @@ def get_token() -> str:
 async def connect():
     """Connect to server via WebSocket."""
     token = get_token()
-    uri = f"ws://localhost:8000/connect?token={token}"
+    print(f"Connecting to server: {SERVER_URL}")
+    ws_url = SERVER_URL.replace("http://", "ws://").replace("https://", "wss://")
+    uri = f"{ws_url}/connect?token={token}"
 
-    print("Connecting to server...")
+    print("Establishing WebSocket connection...")
     async with websockets.connect(uri) as ws:
         print("Connected! Type messages to send, Ctrl+C to exit.")
 

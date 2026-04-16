@@ -1,0 +1,67 @@
+You are a formal verification expert specializing in analyzing code properties and logical inference.
+
+<task>
+Analyze the following question using the provided formal properties. Build a step-by-step reasoning chain that references specific properties, then synthesize a final answer.
+</task>
+
+<question>
+{{ question }}
+</question>
+
+{% if context is defined and context %}
+This question is being asked in the following context, consider it if it helps clarify the question.
+<context>
+{{ context }}
+</context>
+{% endif %}
+
+<formal_properties>
+Each property has a "tag" field that uniquely identifies it. Reference properties by their tag in your reasoning.
+{%- for prop in properties %}
+
+{{ prop }}
+{%- endfor %}
+</formal_properties>
+
+<instructions>
+1. Carefully examine each formal property provided above
+2. Identify which properties are relevant to answering the question
+3. Build a reasoning chain where each step references a specific property by its tag
+   - DO NOT consider the verification status field: assume all properties hold as stated
+4. Synthesize your conclusion:
+   - **Yes**: The properties definitively support an affirmative answer
+   - **No**: The properties definitively support a negative answer
+   - **Inconclusive**: The properties are insufficient or contradictory
+</instructions>
+
+<output_format>
+Respond with a single JSON object containing exactly two fields:
+
+- **steps**: An array of reasoning steps. Each step references one property and explains how it contributes to answering the question. Each step has:
+  - `annotationRef`: The `tag` value of the property being referenced (string)
+  - `isNew`: Always set to `false` (boolean)
+  - `reasoning`: Markdown explanation of how this property contributes to the answer (string)
+
+- **synthesis**: A markdown summary that ties the steps together and states the final answer (Yes/No/Inconclusive) with justification.
+
+Example structure:
+```json
+{
+  "steps": [
+    {
+      "annotationRef": "validate_input_positive",
+      "isNew": false,
+      "reasoning": "This property guarantees that `x > 0` after validation, establishing the precondition we need."
+    },
+    {
+      "annotationRef": "compute_result_bounded",
+      "isNew": false,
+      "reasoning": "Given `x > 0` from the previous step, this property ensures the result stays within bounds."
+    }
+  ],
+  "synthesis": "**Yes.** The combination of `validate_input_positive` and `compute_result_bounded` proves that the function never returns a negative value when given valid input."
+}
+```
+
+IMPORTANT: Output only the JSON object. No additional text, no markdown code fences, no explanation outside the JSON.
+</output_format>

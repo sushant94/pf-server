@@ -6,17 +6,12 @@ Tests cover:
 - Container naming (reconnection stability)
 """
 
-import os
 import time
 
 import pytest
 from jose import jwt as jose_jwt
 
-# Set test environment variables BEFORE importing pf_server modules
-os.environ.setdefault("GITHUB_CLIENT_ID", "test-client-id")
-os.environ.setdefault("GITHUB_CLIENT_SECRET", "test-client-secret")
-os.environ.setdefault("JWT_SECRET", "test-jwt-secret-for-testing-only")
-os.environ.setdefault("ALLOWED_GITHUB_IDS", "12345,67890")
+# Environment variables are set in conftest.py before any imports
 
 
 class TestJWT:
@@ -169,11 +164,14 @@ class TestContainerNaming:
 
     def test_container_ws_url_format(self):
         """WebSocket URL follows expected format."""
+        from pf_server.config import settings
+
         user_id = 12345
         container_name = f"pf-user-{user_id}"
-        expected_url = f"ws://{container_name}:8000/ws"
+        # Use the configured server port (8000 for dev, 8001 for prod)
+        expected_url = f"ws://{container_name}:{settings.port}/ws"
 
         # Verify URL format matches what ws_proxy expects
-        assert expected_url == "ws://pf-user-12345:8000/ws"
+        assert expected_url == f"ws://pf-user-12345:{settings.port}/ws"
         assert expected_url.startswith("ws://")
-        assert ":8000/ws" in expected_url
+        assert f":{settings.port}/ws" in expected_url

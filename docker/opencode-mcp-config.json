@@ -1,0 +1,52 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "litellm": {
+      "name": "LiteLLM Proxy",
+      "options": {
+        "baseURL": "http://host.docker.internal:4000/v1",
+        "apiKey": "{env:LITELLM_PROXY_API_KEY}"
+      },
+      "models": {
+        "claude-opus": {
+          "name": "Claude Opus 4.5",
+          "limit": { "context": 200000, "output": 64000 }
+        },
+        "claude-haiku": {
+          "name": "Claude Haiku 4.5",
+          "limit": { "context": 200000, "output": 64000 }
+        },
+        "claude-sonnet": {
+          "name": "Claude Sonnet 4",
+          "limit": { "context": 200000, "output": 64000 }
+        }
+      }
+    }
+  },
+  "mcp": {
+    "language-server": {
+      "type": "local",
+      "command": [
+        "mcp-language-server",
+        "--workspace", "{env:CURRENT_PROJECT_DIR}",
+        "--lsp", "pyright-langserver",
+        "--", "--stdio"
+      ],
+      "environment": {
+        "LOG_LEVEL": "INFO"
+      }
+    },
+    "code-pathfinder": {
+      "type": "local",
+      "command": ["pathfinder", "serve", "--project", "{env:CURRENT_PROJECT_DIR}"]
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+      },
+      "enabled": true
+    }
+  }
+}

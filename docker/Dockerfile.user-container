@@ -1,0 +1,86 @@
+FROM ubuntu:22.04
+
+# Avoid prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Python 3, pip, and utilities
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    curl \
+    patch \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Make python3 the default python
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+RUN pip install --upgrade pip setuptools wheel
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+ENV LITELLM_PROXY_API_BASE="http://host.docker.internal:4000"
+# LITELLM_PROXY_API_KEY should be set at runtime via docker run -e
+# Enable JSON logging
+ENV LOG_JSON=true 
+
+# Install sandbox-runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bubblewrap \
+    socat \
+    ripgrep \
+    ca-certificates \
+    gnupg \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20.x via NodeSource
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Bun (required for opencode)
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
+
+# Install sandbox-runtime globally
+RUN npm install -g @anthropic-ai/sandbox-runtime
+
+# =============================================================================
+# MCP Server Dependencies for Ultraguess Agent
+# =============================================================================
+
+# Install Go (for mcp-language-server)
+RUN curl -fsSL https://go.dev/dl/go1.22.0.linux-amd64.tar.gz | tar -C /usr/local -xzf -
+ENV PATH="/usr/local/go/bin:/root/go/bin:$PATH"
+
+# Install mcp-language-server (LSP integration)
+RUN go install github.com/isaacphi/mcp-language-server@latest
+
+# Install pyright (Python language server)
+RUN pip install pyright
+
+# Install codepathfinder (call graphs & dataflow analysis)
+RUN pip install codepathfinder
+
+# Context7 is a remote service - no local installation needed
+# Configure via MCP settings with API key
+
+# =============================================================================
+# OpenCode Setup
+# =============================================================================
+# OpenCode will be mounted at /opencode and set up on first container start
+ENV OPENCODE_HOME=/opencode
+ENV PATH="/opencode/packages/opencode/node_modules/.bin:$PATH"
+
+# Expose OpenCode server port (mapped to host ports in containers.py)
+EXPOSE 4096
+
+# Create opencode config directory and copy MCP config
+RUN mkdir -p /root/.config/opencode
+COPY opencode-mcp-config.json /root/.config/opencode/opencode.json
+
+# Runtime environment variables (CONTEXT7_API_KEY, CURRENT_PROJECT_DIR)
+# are passed by pf-server when creating containers - see containers.py

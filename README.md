@@ -74,13 +74,24 @@ Edit `.env`:
 GITHUB_CLIENT_ID=<from GitHub>
 GITHUB_CLIENT_SECRET=<from GitHub>
 JWT_SECRET=<generate with: openssl rand -hex 32>
-ALLOWED_GITHUB_IDS=<your GitHub user ID>
+
+# For development (uses ALLOWED_GITHUB_IDS_DEV)
+DEPLOYMENT_TYPE=dev
+SERVER_PORT=8000
+ALLOWED_GITHUB_IDS_DEV=<your GitHub user ID>
+
+# For production (uses ALLOWED_GITHUB_IDS_PROD)
+# DEPLOYMENT_TYPE=prod
+# SERVER_PORT=8001
+# ALLOWED_GITHUB_IDS_PROD=<comma-separated production user IDs>
 ```
 
 Find your GitHub user ID:
 ```bash
 curl https://api.github.com/users/YOUR_USERNAME | grep '"id"'
 ```
+
+**Note**: The server supports running dev and prod instances simultaneously on different ports (8000 for dev, 8001 for prod) with separate GitHub ID whitelists.
 
 ### 3. Create Docker Network
 
@@ -99,14 +110,28 @@ uv pip install -e ".[dev]"
 
 ### Start Server
 
+For development (default port 8000):
 ```bash
 uv run uvicorn pf_server.main:app --reload
 ```
 
+For production (port 8001):
+```bash
+export DEPLOYMENT_TYPE=prod
+export SERVER_PORT=8001
+uv run uvicorn pf_server.main:app --host 0.0.0.0 --port 8001
+```
+
 ### CLI Commands
 
+The CLI uses the `PF_SERVER_URL` environment variable to determine which server to connect to:
+
 ```bash
-# Login (opens browser for GitHub OAuth)
+# Login to dev server (default: http://localhost:8000)
+uv run python cli/pf_cli.py login
+
+# Login to production server
+export PF_SERVER_URL="http://your-server-ip:8001"
 uv run python cli/pf_cli.py login
 
 # Connect to your container via WebSocket

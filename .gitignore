@@ -14,3 +14,16 @@ wheels/
 
 # pytest cache
 .pytest_cache/
+
+# Debug files
+*.debug
+
+# Infrastructure / deployment secrets
+.aws/
+deploy-*.sh
+*.pem
+*.key
+
+# Environment overrides
+.env.*
+!.env.example
